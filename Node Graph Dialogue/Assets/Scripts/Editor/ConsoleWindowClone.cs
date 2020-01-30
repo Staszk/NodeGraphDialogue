@@ -1,8 +1,25 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
 namespace NodeDialogueSystem {
+
+	public class Log
+	{
+		public bool isSelected;
+		public string info;
+		public string message;
+		public LogType type;
+
+		public Log(bool isSelected, string info, string message, LogType type)
+		{
+			this.isSelected = isSelected;
+			this.info = info;
+			this.message = message;
+			this.type = type;
+		}
+	}
+
 	public class ConsoleWindowClone : EditorWindow
 	{
 		private Rect upperPanel;
@@ -44,6 +61,9 @@ namespace NodeDialogueSystem {
 		private GUIStyle boxStyle;
 		private GUIStyle textAreaStyle;
 
+		private List<Log> logs;
+		private Log selectedLog;
+
 		[MenuItem("Window/Console Clone")]
 		private static void OpenWindow()
 		{
@@ -51,7 +71,7 @@ namespace NodeDialogueSystem {
 				titleImage = EditorGUIUtility.Load("icons/UnityEditor.ConsoleWindow.png") as Texture;
 
 			ConsoleWindowClone window = GetWindow<ConsoleWindowClone>();
-			window.titleContent = new GUIContent("Console Log Clone", titleImage);
+			window.titleContent = new GUIContent("Console Clone", titleImage);
 		}
 
 		private void OnEnable()
@@ -77,6 +97,16 @@ namespace NodeDialogueSystem {
 			errorIconSmall = EditorGUIUtility.Load("icons/console.erroricon.sml.png") as Texture2D;
 			warningIconSmall = EditorGUIUtility.Load("icons/console.warnicon.sml.png") as Texture2D;
 			infoIconSmall = EditorGUIUtility.Load("icons/console.infoicon.sml.png") as Texture2D;
+
+			logs = new List<Log>();
+			selectedLog = null;
+
+			Application.logMessageReceived += LogMessageReceived;
+		}
+
+		private void OnDisable()
+		{
+			Application.logMessageReceived -= LogMessageReceived;
 		}
 
 		private void OnGUI()
@@ -122,11 +152,20 @@ namespace NodeDialogueSystem {
 			GUILayout.BeginArea(upperPanel);
 			upperPanelScroll = GUILayout.BeginScrollView(upperPanelScroll);
 
-			DrawBox("Hello, World!", LogType.Log, true, true);
-			DrawBox("ResizablePanels here!", LogType.Log, false, false);
-			DrawBox("How do I look?", LogType.Warning, true, false);
-			DrawBox("The lower panel doesn't seem to be working.", LogType.Error, false, false);
-			DrawBox("You should start working on that.", LogType.Warning, true, false);
+			for (int i = 0; i < logs.Count; i++)
+			{
+				if (DrawBox(logs[i].info, logs[i].type, i % 2 == 0, logs[i].isSelected))
+				{
+					if (selectedLog != null)
+					{
+						selectedLog.isSelected = false;
+					}
+
+					logs[i].isSelected = true;
+					selectedLog = logs[i];
+					GUI.changed = true;
+				}
+			}
 
 			GUILayout.EndScrollView();
 			GUILayout.EndArea();
@@ -139,7 +178,10 @@ namespace NodeDialogueSystem {
 			GUILayout.BeginArea(lowerPanel);
 			lowerPanelScroll = GUILayout.BeginScrollView(lowerPanelScroll);
 
-			GUILayout.TextArea("It is working now!", textAreaStyle);
+			if (selectedLog != null)
+			{
+				GUILayout.TextArea(selectedLog.message, textAreaStyle);
+			}
 
 			GUILayout.EndScrollView();
 			GUILayout.EndArea();
@@ -210,6 +252,12 @@ namespace NodeDialogueSystem {
 				sizeRatio = e.mousePosition.y / position.height;
 				Repaint();
 			}
+		}
+
+		private void LogMessageReceived(string condition, string stackTrace, LogType type)
+		{
+			Log l = new Log(false, condition, stackTrace, type);
+			logs.Add(l);
 		}
 	}
 }
