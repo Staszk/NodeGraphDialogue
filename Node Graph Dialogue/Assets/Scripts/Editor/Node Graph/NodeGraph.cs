@@ -10,7 +10,7 @@ namespace NodeDialogueSystem {
 
 		private GUIStyle nodeStyle;
 
-		[MenuItem("Window/DialogueGraph")]
+		[MenuItem("Node Graph/DialogueGraph")]
 		private static void OpenWindow()
 		{
 			NodeGraph window = GetWindow<NodeGraph>();
