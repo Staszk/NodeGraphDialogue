@@ -9,13 +9,26 @@ namespace NodeDialogueSystem
 		public string title;
 
 		public bool isDragged;
+		public bool isSelected;
+
+		public ConnectionPoint inPoint;
+		public ConnectionPoint outPoint;
 
 		public GUIStyle style;
+		public GUIStyle defaultNodeStyle;
+		public GUIStyle selectedNodestyle;
 
-		public Node(Vector2 position, float width, float height, GUIStyle nodeStyle)
+		public Node(Vector2 position, float width, float height, 
+			GUIStyle nodeStyle, GUIStyle selectedStyle,
+			GUIStyle inPointStyle, GUIStyle outPointStyle, 
+			System.Action<ConnectionPoint> OnClickInPoint, System.Action<ConnectionPoint> OnClickOutPoint)
 		{
 			rect = new Rect(position.x, position.y, width, height);
 			style = nodeStyle;
+			defaultNodeStyle = nodeStyle;
+			selectedNodestyle = selectedStyle;
+			inPoint = new ConnectionPoint(this, ConnectionPointType.In, inPointStyle, OnClickInPoint);
+			outPoint = new ConnectionPoint(this, ConnectionPointType.Out, outPointStyle, OnClickOutPoint);
 		}
 
 		public void Drag(Vector2 delta)
@@ -25,6 +38,8 @@ namespace NodeDialogueSystem
 
 		public void Draw()
 		{
+			inPoint.Draw();
+			outPoint.Draw();
 			GUI.Box(rect, title, style);
 		}
 
@@ -38,6 +53,13 @@ namespace NodeDialogueSystem
 						if (rect.Contains(e.mousePosition))
 						{
 							isDragged = true;
+							isSelected = true;
+							style = selectedNodestyle;
+						}
+						else
+						{
+							isSelected = false;
+							style = defaultNodeStyle;
 						}
 
 						GUI.changed = true;
