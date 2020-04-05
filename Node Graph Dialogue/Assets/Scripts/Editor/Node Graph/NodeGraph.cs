@@ -9,11 +9,7 @@ namespace NodeDialogueSystem {
 		private List<Node> nodes;
 		private List<Connection> connections;
 
-		private GUIStyle nodeStyle;
-		private GUIStyle selectedNodeStyle;
-		private GUIStyle inPointStyle;
-		private GUIStyle outPointStyle;
-
+        private Node selectedNode;
 		private ConnectionPoint selectedInPoint;
 		private ConnectionPoint selectedOutPoint;
 
@@ -26,23 +22,7 @@ namespace NodeDialogueSystem {
 
 		private void OnEnable()
 		{
-			nodeStyle = new GUIStyle();
-			nodeStyle.normal.background = EditorGUIUtility.Load("builtin skins/darkskin/images/node1.png") as Texture2D;
-			nodeStyle.border = new RectOffset(12, 12, 12, 12);
 
-			selectedNodeStyle = new GUIStyle();
-			selectedNodeStyle.normal.background = EditorGUIUtility.Load("builtin skins/darkskin/images/node1 on.png") as Texture2D;
-			selectedNodeStyle.border = new RectOffset(12, 12, 12, 12);
-
-			inPointStyle = new GUIStyle();
-			inPointStyle.normal.background = EditorGUIUtility.Load("builtin skins/darkskin/images/btn left.png") as Texture2D;
-			inPointStyle.active.background = EditorGUIUtility.Load("builtin skins/darkskin/images/btn left on.png") as Texture2D;
-			inPointStyle.border = new RectOffset(4, 4, 12, 12);
-
-			outPointStyle = new GUIStyle();
-			outPointStyle.normal.background = EditorGUIUtility.Load("builtin skins/darkskin/images/btn right.png") as Texture2D;
-			outPointStyle.active.background = EditorGUIUtility.Load("builtin skins/darkskin/images/btn right on.png") as Texture2D;
-			outPointStyle.border = new RectOffset(4, 4, 12, 12);
 		}
 
 		private void OnGUI()
@@ -50,8 +30,10 @@ namespace NodeDialogueSystem {
 			DrawNodes();
 			DrawConnections();
 
-			ProcessNodeEvents(Event.current);
-			ProcessEvents(Event.current);
+            ProcessNodeEvents(Event.current);
+
+            if (!GUI.changed)
+			    ProcessEvents(Event.current);
 
 			if (GUI.changed) Repaint();
 		}
@@ -104,6 +86,15 @@ namespace NodeDialogueSystem {
 						ProcessContextMenu(e.mousePosition);
 					}
 					break;
+                case EventType.KeyDown:
+                    switch (e.keyCode)
+                    {
+                        case KeyCode.Escape:
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
 			}
 		}
 
@@ -121,8 +112,13 @@ namespace NodeDialogueSystem {
 				nodes = new List<Node>();
 			}
 
-			nodes.Add(new Node(mousePosition, 200, 50, nodeStyle, selectedNodeStyle, inPointStyle, outPointStyle, OnClickInPoint, OnClickOutPoint));
+			nodes.Add(new Node(this, mousePosition));
 		}
+
+        public void RemoveNode(Node toBeDeleted)
+        {
+            nodes.Remove(toBeDeleted);
+        }
 
 		private void OnClickInPoint(ConnectionPoint inPoint)
 		{

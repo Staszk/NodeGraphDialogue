@@ -5,8 +5,11 @@ namespace NodeDialogueSystem
 {
 	public class Node
 	{
+        private NodeGraph parent;
+
 		public Rect rect;
-		public string title;
+        protected float width, height;
+        public string title;
 
 		public bool isDragged;
 		public bool isSelected;
@@ -16,19 +19,28 @@ namespace NodeDialogueSystem
 
 		public GUIStyle style;
 		public GUIStyle defaultNodeStyle;
-		public GUIStyle selectedNodestyle;
+		public GUIStyle selectedNodeStyle;
 
-		public Node(Vector2 position, float width, float height, 
-			GUIStyle nodeStyle, GUIStyle selectedStyle,
-			GUIStyle inPointStyle, GUIStyle outPointStyle, 
-			System.Action<ConnectionPoint> OnClickInPoint, System.Action<ConnectionPoint> OnClickOutPoint)
+		public Node(NodeGraph parent, Vector2 position)
 		{
+            this.parent = parent;
+            width = 250;
+            height = 300;
+
 			rect = new Rect(position.x, position.y, width, height);
-			style = nodeStyle;
-			defaultNodeStyle = nodeStyle;
-			selectedNodestyle = selectedStyle;
-			inPoint = new ConnectionPoint(this, ConnectionPointType.In, inPointStyle, OnClickInPoint);
-			outPoint = new ConnectionPoint(this, ConnectionPointType.Out, outPointStyle, OnClickOutPoint);
+
+            defaultNodeStyle = new GUIStyle();
+            defaultNodeStyle.normal.background = EditorGUIUtility.Load("builtin skins/darkskin/images/node1.png") as Texture2D;
+            defaultNodeStyle.border = new RectOffset(12, 12, 12, 12);
+
+            selectedNodeStyle = new GUIStyle();
+            selectedNodeStyle.normal.background = EditorGUIUtility.Load("builtin skins/darkskin/images/node1 on.png") as Texture2D;
+            selectedNodeStyle.border = new RectOffset(12, 12, 12, 12);
+
+            style = defaultNodeStyle;
+
+			inPoint = new ConnectionPoint(this, ConnectionPointType.In);
+			outPoint = new ConnectionPoint(this, ConnectionPointType.Out);
 		}
 
 		public void Drag(Vector2 delta)
@@ -38,10 +50,16 @@ namespace NodeDialogueSystem
 
 		public void Draw()
 		{
-			inPoint.Draw();
-			outPoint.Draw();
 			GUI.Box(rect, title, style);
+            GUI.TextField(new Rect(rect.x + 30, rect.y + 30, 150, 30), "");
 		}
+
+        public void SelectThisNode(bool selected)
+        {
+            isSelected = selected;
+
+            style = !selected ? defaultNodeStyle : selectedNodeStyle;
+        }
 
 		public bool ProcessEvents(Event e)
 		{
@@ -53,17 +71,30 @@ namespace NodeDialogueSystem
 						if (rect.Contains(e.mousePosition))
 						{
 							isDragged = true;
-							isSelected = true;
-							style = selectedNodestyle;
+                            SelectThisNode(true);
 						}
 						else
 						{
-							isSelected = false;
-							style = defaultNodeStyle;
-						}
+                            SelectThisNode(false);
+                        }
 
 						GUI.changed = true;
 					}
+                    else if (e.button == 1)
+                    {
+                        if (rect.Contains(e.mousePosition))
+                        {
+                            SelectThisNode(true);
+                            ProcessNodeMenu(e.mousePosition);
+
+                            GUI.changed = true;
+                        }
+                        else
+                        {
+                            SelectThisNode(false);
+                        }
+                            
+                    }
 					break;
 
 				case EventType.MouseUp:
@@ -80,7 +111,14 @@ namespace NodeDialogueSystem
 					break;
 			}
 
-			return false;
+			return GUI.changed;
 		}
+
+        private void ProcessNodeMenu(Vector2 mousePos)
+        {
+            GenericMenu gMenu = new GenericMenu();
+            gMenu.AddItem(new GUIContent("Remove Node"), false, () => parent.RemoveNode(this));
+            gMenu.ShowAsContext();
+        }
 	}
 }
