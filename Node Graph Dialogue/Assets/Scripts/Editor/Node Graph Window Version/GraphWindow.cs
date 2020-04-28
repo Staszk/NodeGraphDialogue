@@ -8,12 +8,13 @@ public class GraphWindow : EditorWindow
 {
     public enum GraphActions { CreateDialogueNode, DeleteNode, CreateTransition, DeleteTransition, CancelTransition };
 
-    private static List<BaseNode> nodes = new List<BaseNode>();
-    private Vector3 mousePos;
+    private NodeGraph currentGraph;
+    private Vector2 mousePos;
     private bool makingTransition = false;
     private bool nodeIsSelected;
     private BaseNode selectedNode;
     private BaseNode nodeAwaitingTransition;
+    private Vector2 panStart;
 
     [MenuItem("Node Graph/DialogueGraph V2")]
     private static void OpenWindow()
@@ -34,24 +35,35 @@ public class GraphWindow : EditorWindow
     #region Draw
     private void DrawNodes()
     {
-        BeginWindows();
+        GUILayout.BeginHorizontal();
+        currentGraph = (NodeGraph)EditorGUILayout.ObjectField(currentGraph, typeof(NodeGraph), false);
+        GUILayout.FlexibleSpace();
+        GUILayout.EndHorizontal();
 
-        foreach (BaseNode node in nodes)
+
+        if (currentGraph != null)
         {
-            node.DrawCurve();
-        }
+            List<BaseNode> nodes = currentGraph.allNodes;
 
-        for (int i = 0; i < nodes.Count; i++)
-        {
-            nodes[i].nodeRect = GUI.Window(i, nodes[i].nodeRect, DrawNodeWindow, nodes[i].windowTitle);
-        }
+            BeginWindows();
 
-        EndWindows();
+            foreach (BaseNode node in nodes)
+            {
+                node.DrawCurve();
+            }
+
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                nodes[i].nodeRect = GUI.Window(i, nodes[i].nodeRect, DrawNodeWindow, nodes[i].windowTitle);
+            }
+
+            EndWindows();
+        }
     }
 
     private void DrawNodeWindow(int id)
     {
-        nodes[id].DrawNode();
+        currentGraph.allNodes[id].DrawNode();
         GUI.DragWindow();
     }
     #endregion
@@ -76,6 +88,34 @@ public class GraphWindow : EditorWindow
                 //LeftClick(e);
             }
         }
+
+        // Middle Click
+        if (e.button == 2)
+        {
+            if (e.type == EventType.MouseDown)
+            {
+                panStart = e.mousePosition;
+            }
+            else if (e.type == EventType.MouseDrag)
+            {
+                if (currentGraph != null) // if null, there is nothing to pan
+                    HandlePanning(e);
+            }
+        }
+    }
+
+    private void HandlePanning(Event e)
+    {
+        Vector2 panThisFrame = e.mousePosition - panStart;
+        panThisFrame *= 0.6f;
+
+        for (int i = 0; i < currentGraph.allNodes.Count; i++)
+        {
+            currentGraph.allNodes[i].nodeRect.x += panThisFrame.x;
+            currentGraph.allNodes[i].nodeRect.y += panThisFrame.y;
+        }
+
+        panStart = e.mousePosition;
     }
 
     private void RightClick(Event e)
@@ -83,13 +123,16 @@ public class GraphWindow : EditorWindow
         selectedNode = null;
         nodeIsSelected = false;
 
-        for (int i = 0; i < nodes.Count; i++)
+        if (currentGraph != null)
         {
-            if (nodes[i].nodeRect.Contains(e.mousePosition))
+            for (int i = 0; i < currentGraph.allNodes.Count; i++)
             {
-                nodeIsSelected = true;
-                selectedNode = nodes[i];
-                break;
+                if (currentGraph.allNodes[i].nodeRect.Contains(e.mousePosition))
+                {
+                    nodeIsSelected = true;
+                    selectedNode = currentGraph.allNodes[i];
+                    break;
+                }
             }
         }
 
@@ -126,7 +169,6 @@ public class GraphWindow : EditorWindow
             menu.AddItem(new GUIContent("Transition/To Here"), false, ClickContextCallback, GraphActions.CreateTransition);
         }
 
-
         menu.ShowAsContext();
         e.Use();
     }
@@ -159,13 +201,13 @@ public class GraphWindow : EditorWindow
                 DialogueNode dialogueNode = CreateInstance<DialogueNode>();
                 dialogueNode.nodeRect = new Rect(mousePos.x, mousePos.y, DialogueNode.width, DialogueNode.height);
                 dialogueNode.windowTitle = DialogueNode.title;
-                nodes.Add(dialogueNode);
+                currentGraph.allNodes.Add(dialogueNode);
                 break;
             case GraphActions.DeleteNode:
                 if (selectedNode != null)
                 {
                     selectedNode.CleanSelf();
-                    nodes.Remove(selectedNode);
+                    currentGraph.allNodes.Remove(selectedNode);
                 }
                 break;
             case GraphActions.CreateTransition:
@@ -206,6 +248,11 @@ public class GraphWindow : EditorWindow
         Vector3 endTan = endPos + Vector3.left * 50;
 
         Handles.DrawBezier(startPos, endPos, startTan, endTan, Color.black, null, 3);
+
+        if (Handles.Button((start.center + end.center) * 0.5f, Quaternion.identity, 4, 8, Handles.CircleHandleCap))
+        {
+            
+        }
     }
 
     #endregion

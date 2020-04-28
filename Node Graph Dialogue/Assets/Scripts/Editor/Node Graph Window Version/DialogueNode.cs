@@ -1,10 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+[System.Serializable]
 public class DialogueNode : BaseNode
 {
     public static readonly string title = "Dialogue Node";
-    public static readonly int height = 150;
+    public static readonly int height = 100;
     public static readonly int width = 200;
 
     private string charName = "Name";

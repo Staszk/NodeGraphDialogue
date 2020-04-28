@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public abstract class BaseNode : ScriptableObject
 {
     public Rect nodeRect;
