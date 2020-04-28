@@ -12,4 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c85f779415022243a243e4553826f8d, type: 3}
   m_Name: Dialogue One
   m_EditorClassIdentifier: 
-  allNodes: []
+  allNodes:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  description: Example of dialogue between Parker and Sajid.
